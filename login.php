@@ -1,59 +1,59 @@
 <?php
-
 ob_start();
-require_once "dbConnect.php";
+require_once './Auth/Auth.class.php';
+require_once './Auth/MyDbConnection.php';
 
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+Auth::startSession();
 
-if (isset($_POST['pwd'], $_POST['email'])) {
-    $email = $_POST["email"];
-    $password = $_POST["pwd"];
-
-    $pdo = getPDOConnexion();
-    // Préparation de la requête SQL
-    $stmt = $pdo->prepare('SELECT id, pwd FROM Users WHERE email = ?');
-    // Exécution de la requête
+if (isset($_POST['email'], $_POST['password'])) {
+    $email = $_POST['email'];
+    $password = $_POST['password'];
+    $pdo = MyDbConnection::getInstance(); 
+    $stmt = $pdo->prepare('SELECT id_user, password FROM users WHERE email = ?');
     $stmt->execute([$email]);
-    // Récupération du résultat
     $user = $stmt->fetch();
 
-    // Vérification du mot de passe
-    if ($user) {
-        $passwordhash = $user["pwd"];
-
-
-        if (password_verify($password, $passwordhash)) {
-            $_SESSION["user_id"] = $user['id']; // Définition de l'ID utilisateur dans la session
-            header('Location: index.php'); // Redirection vers la page d'accueil après connexion
-            exit(); // Arrêt du script après la redirection
-        } else {
-            $error = "Mot de passe ou mail  incorrect.";
-        }
+    if ($user && password_verify($password, $user['password'])) {
+        $_SESSION['user_id'] = $user['id_user'];
+        header('Location: index.php');
+        exit();
     } else {
-        $error = "Utilisateur non trouvé.";
+        $error = "Email ou mot de passe incorrect.";
     }
 }
-
 ?>
 
 <div class="login-container">
     <?php if (isset($error)) : ?>
-        <p class="error"><?= htmlspecialchars($error); ?></p>
+        <p class="error"><?php echo htmlspecialchars($error) ?></p>
     <?php endif; ?>
-    <form action="" method="POST">
-        <label for="email">Email :</label>
-        <input type="email" name="email" id="email" required>
-
-        <label for="pwd">Password :</label>
-        <input type="password" name="pwd" id="pwd" required>
-        <input type="submit" value="Connexion">
+    <form class="form" action="" method="post">
+        <div class="input-container">
+            <input type="email" name="email" id="email" placeholder="John.Doe@doe.com" required>
+        </div>
+        <div class="input-container">
+            <input type="password" name="password" id="password" placeholder="***************" required>
+        </div>
+        <input class="btnsin" type="submit" value="Connexion">
+        <p class="login-link">
+            <a href="">Mot de passe oublié ?</a>
+        </p>
+        <p class="login-link">
+            Ici pour
+            <a href="./singin.php">s'inscrire</a>
+        </p>
     </form>
 </div>
 
+
+
+
+
+
+<!-- // Récupérer le contenu de la page template -->
 <?php
 $content = ob_get_clean();
-$titre = "Identification Espace Admin";
-require "template.php";
+$titre = "Connexion";
+$titre2 = "BacketJO - Connexion";
+require_once "template.php";
 ?>
